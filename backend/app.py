@@ -5,44 +5,63 @@ import random
 import time
 import shutil
 import os
+import re
+
+import pytesseract
+from PIL import Image
 
 from cryptography.fernet import Fernet
 from twilio.rest import Client
 
+
 app = FastAPI()
 
-# -------------------------
-# CORS FOR REACT FRONTEND
-# -------------------------
+# ---------------------------------
+# WINDOWS TESSERACT PATH
+# ---------------------------------
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+
+# ---------------------------------
+# CORS (FIXED)
+# ---------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
-# -------------------------
+
+# ---------------------------------
 # STORAGE
-# -------------------------
+# ---------------------------------
 vault = {}
 requests_db = {}
+verification_logs = []
 
 if not os.path.exists("uploads"):
     os.mkdir("uploads")
 
-# -------------------------
-# CRYPTO SIGNATURE
-# -------------------------
+
+# ---------------------------------
+# CRYPTO
+# ---------------------------------
 SECRET = Fernet.generate_key()
 cipher = Fernet(SECRET)
 
-# -------------------------
-# TWILIO (replace later)
-# -------------------------
+
+# ---------------------------------
+# TWILIO (demo fallback)
+# ---------------------------------
 TWILIO_SID = "TWILIO_SID"
 TWILIO_AUTH = "TWILIO_AUTH"
 TWILIO_FROM = "+1xxxxxxx"
+
 
 def send_sms(phone, code):
     try:
@@ -58,14 +77,13 @@ def send_sms(phone, code):
         )
 
     except Exception:
-        # fallback for demo
         print("SMS simulation fallback")
         print("Approval Code:", code)
 
 
-# -------------------------
+# ---------------------------------
 # HEALTH
-# -------------------------
+# ---------------------------------
 @app.get("/")
 def home():
     return {
@@ -74,9 +92,9 @@ def home():
     }
 
 
-# -------------------------
-# STRUCTURED DOC UPLOAD
-# -------------------------
+# ---------------------------------
+# STRUCTURED DOCUMENT UPLOAD
+# ---------------------------------
 @app.post("/upload_document")
 def upload_document(data: dict):
 
@@ -97,26 +115,20 @@ def upload_document(data: dict):
                     data.get("address_verified", False)
             },
 
-            "verification_status":
-                "pending",
-
-            "verified_by":
-                None,
-
-            "signature":
-                None
+            "verification_status": "pending",
+            "verified_by": None,
+            "signature": None
         }
     }
 
     return {
-        "status": "uploaded",
-        "message": "Pending admin verification"
+        "status": "uploaded"
     }
 
 
-# -------------------------
-# IMAGE AADHAAR UPLOAD
-# -------------------------
+# ---------------------------------
+# AADHAAR IMAGE + OCR UPLOAD
+# ---------------------------------
 @app.post("/upload_aadhaar")
 async def upload_aadhaar(
     user_id: str,
@@ -131,38 +143,85 @@ async def upload_aadhaar(
             buffer
         )
 
-    # simulated OCR extraction
+    # OCR
+    img = Image.open(path)
+
+    text = pytesseract.image_to_string(
+        img
+    )
+
+    print("OCR TEXT:")
+    print(text)
+
+    # -------------------------
+    # crude extraction
+    # -------------------------
+    age_over_18 = False
+    address_verified = False
+    name = "Unknown"
+
+    match = re.search(
+        r'\b(19|20)\d\d\b',
+        text
+    )
+
+    if match:
+        birth_year = int(
+            match.group()
+        )
+
+        if 2026 - birth_year >= 18:
+            age_over_18 = True
+
+    lines = text.split("\n")
+
+    for line in lines:
+
+        clean = line.strip()
+
+        if (
+            len(clean.split()) >= 2
+            and clean.replace(" ", "").isalpha()
+        ):
+            name = clean
+            break
+
+    if "Address" in text:
+        address_verified = True
+
     extracted = {
-        "name": "Naveen",
-        "age_over_18": True,
-        "address_verified": True
+        "name": name,
+        "age_over_18": age_over_18,
+        "address_verified": address_verified
     }
 
     vault[user_id] = {
+
         "document": {
+
             "image_path": path,
+
+            "ocr_text": text,
 
             "attributes": extracted,
 
-            "verification_status":
-                "pending",
+            "verification_status": "pending",
 
-            "verified_by":
-                None,
+            "verified_by": None,
 
-            "signature":
-                None
+            "signature": None
         }
     }
 
     return {
-        "stored": True
+        "stored": True,
+        "extracted": extracted
     }
 
 
-# -------------------------
-# GOVT ADMIN APPROVAL
-# -------------------------
+# ---------------------------------
+# GOVT ADMIN APPROVE
+# ---------------------------------
 @app.post("/admin/approve")
 def admin_approve(data: dict):
 
@@ -191,14 +250,13 @@ def admin_approve(data: dict):
 
     return {
         "status": "verified",
-        "approved_by": data["officer_id"],
         "signature": signature
     }
 
 
-# -------------------------
+# ---------------------------------
 # BANK REQUEST
-# -------------------------
+# ---------------------------------
 @app.post("/request_verification")
 def request_verification(data: dict):
 
@@ -218,17 +276,22 @@ def request_verification(data: dict):
         }
 
     request_id = str(
-        random.randint(10000, 99999)
+        random.randint(
+            10000,
+            99999
+        )
     )
 
     approval_code = str(
-        random.randint(100000, 999999)
+        random.randint(
+            100000,
+            999999
+        )
     )
 
     requests_db[request_id] = {
 
-        "user_id":
-            user_id,
+        "user_id": user_id,
 
         "attribute":
             data["attribute"],
@@ -254,18 +317,19 @@ def request_verification(data: dict):
         approval_code
     )
 
-    # FIXED: return approval code
     return {
-        "request_id": request_id,
-        "approval_code": approval_code,
-        "message":
-            f"{data['bank']} requests {data['attribute']}"
+
+        "request_id":
+            request_id,
+
+        "approval_code":
+            approval_code
     }
 
 
-# -------------------------
+# ---------------------------------
 # USER CONSENT
-# -------------------------
+# ---------------------------------
 @app.post("/approve_request")
 def approve_request(data: dict):
 
@@ -280,20 +344,20 @@ def approve_request(data: dict):
 
     if req["used"]:
         return {
-            "verified": False,
-            "reason": "CODE_ALREADY_USED"
+            "reason":
+                "CODE_ALREADY_USED"
         }
 
     if time.time() - req["created"] > 60:
         return {
-            "verified": False,
-            "reason": "CODE_EXPIRED"
+            "reason":
+                "CODE_EXPIRED"
         }
 
     if data["code"] != req["code"]:
         return {
-            "verified": False,
-            "reason": "CONSENT_DENIED"
+            "reason":
+                "CONSENT_DENIED"
         }
 
     req["approved"] = True
@@ -303,29 +367,30 @@ def approve_request(data: dict):
     }
 
 
-# -------------------------
-# SELECTIVE DISCLOSURE
-# -------------------------
+# ---------------------------------
+# SELECTIVE DISCLOSURE RESPONSE
+# ---------------------------------
 @app.get("/vault_response/{request_id}")
 def vault_response(request_id: str):
 
     if request_id not in requests_db:
         return {
-            "error": "INVALID_REQUEST"
+            "error":
+                "INVALID_REQUEST"
         }
 
     req = requests_db[request_id]
 
     if not req["approved"]:
         return {
-            "verified": False,
-            "reason": "PENDING_USER_CONSENT"
+            "reason":
+                "PENDING_USER_CONSENT"
         }
 
     if req["used"]:
         return {
-            "verified": False,
-            "reason": "TOKEN_REPLAY_BLOCKED"
+            "reason":
+                "TOKEN_REPLAY_BLOCKED"
         }
 
     req["used"] = True
@@ -341,10 +406,45 @@ def vault_response(request_id: str):
         False
     )
 
+    proof = cipher.encrypt(
+        f"{attribute}:{result}:{time.time()}".encode()
+    ).decode()
+
+    verification_logs.append({
+
+        "bank":
+            req["bank"],
+
+        "user":
+            user,
+
+        "attribute":
+            attribute,
+
+        "result":
+            result,
+
+        "timestamp":
+            time.time()
+    })
+
     return {
+
         "proof":
-            "VALID_ATTRIBUTE_PROOF",
+            proof,
 
         "verified":
             result
+    }
+
+
+# ---------------------------------
+# AUDIT LOGS
+# ---------------------------------
+@app.get("/audit_logs")
+def audit_logs():
+
+    return {
+        "logs":
+            verification_logs
     }
