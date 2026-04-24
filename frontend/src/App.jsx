@@ -1,154 +1,204 @@
-import { useState } from "react";
+import React,{useState} from "react";
 import {
+BrowserRouter,
 Routes,
-Route,
-Link
+Route
 } from "react-router-dom";
 
 const API="http://127.0.0.1:8000";
 
-function Layout({children}){
+
+/* ---------------- OPEN WINDOWS ---------------- */
 
 function launchAll(){
-window.open("/user");
-window.open("/admin");
-window.open("/bank");
-window.open("/consent");
-window.open("/vault");
+
+window.open("http://localhost:5173/user","userWindow");
+window.open("http://localhost:5173/admin","adminWindow");
+window.open("http://localhost:5173/bank","bankWindow");
+window.open("http://localhost:5173/consent","consentWindow");
+window.open("http://localhost:5173/vault","vaultWindow");
+
 }
 
+
+
+/* ---------------- DASHBOARD ---------------- */
+
+function Dashboard(){
+
 return(
+
 <div style={{
-background:"#0f172a",
 minHeight:"100vh",
-padding:"30px",
+padding:"40px",
+background:
+"linear-gradient(135deg,#020617,#1e3a8a,#0ea5e9)",
 color:"white",
-fontFamily:"Arial"
+fontFamily:"Segoe UI"
 }}>
 
-<div style={{
-maxWidth:"900px",
-margin:"auto"
-}}>
+<h1 style={{fontSize:"56px"}}>
+🔐 Digital Identity Vault
+</h1>
 
-<h1>Digital Identity Vault</h1>
+<p>Privacy Preserving Verification Network</p>
 
 <button
 onClick={launchAll}
 style={{
-padding:"12px 20px",
-borderRadius:"10px",
+padding:"18px 28px",
+borderRadius:"18px",
 border:"none",
-background:"#2563eb",
-color:"white"
+fontWeight:"700"
 }}
 >
 Launch All Portals
 </button>
 
-<hr/>
 
-<div style={{marginBottom:"30px"}}>
-<Link to="/user">User</Link> |{" "}
-<Link to="/admin">Admin</Link> |{" "}
-<Link to="/bank">Bank</Link> |{" "}
-<Link to="/consent">Consent</Link> |{" "}
-<Link to="/vault">Vault</Link>
+<div style={{
+display:"grid",
+gridTemplateColumns:"1fr 1fr 1fr",
+gap:"25px",
+marginTop:"40px"
+}}>
+
+<div style={{
+background:"rgba(255,255,255,.08)",
+padding:"30px",
+borderRadius:"24px"
+}}>
+<h2>KYC Requests</h2>
+<h1>126</h1>
 </div>
 
-{children}
+<div style={{
+background:"rgba(255,255,255,.08)",
+padding:"30px",
+borderRadius:"24px"
+}}>
+<h2>Fraud Risk</h2>
+<h1>82%</h1>
+</div>
+
+<div style={{
+background:"rgba(255,255,255,.08)",
+padding:"30px",
+borderRadius:"24px"
+}}>
+<h2>Consent Rate</h2>
+<h1>91%</h1>
+</div>
 
 </div>
+
 </div>
+
 )
+
 }
 
 
 
-/* USER PORTAL */
+/* ---------------- USER ---------------- */
+
 function UserPortal(){
 
 const [file,setFile]=useState(null);
-const [msg,setMsg]=useState("");
+const [result,setResult]=useState(null);
 
-async function uploadImage(){
+async function upload(){
 
 if(!file){
-alert("Choose image first");
+alert("Choose file");
 return;
 }
 
-const formData=new FormData();
+const fd=new FormData();
 
-/* only send file */
-formData.append(
-"file",
-file
-);
+fd.append("file",file);
 
-/* FIXED: user_id goes in query */
 const res=await fetch(
 `${API}/upload_aadhaar?user_id=u1`,
 {
 method:"POST",
-body:formData
+body:fd
 }
 );
 
 const data=await res.json();
 
-setMsg(
-JSON.stringify(
-data,
-null,
-2
-)
-);
+setResult(data);
 
 }
 
 return(
-<Layout>
 
 <div style={{
-background:"#1e293b",
-padding:"30px",
-borderRadius:"16px"
+minHeight:"100vh",
+padding:"40px",
+background:"#1d4ed8",
+color:"white"
 }}>
 
-<h2>User Vault App</h2>
-
-<p>Upload Aadhaar Image</p>
+<h1>🪪 User Wallet</h1>
 
 <input
 type="file"
-accept="image/*"
 onChange={(e)=>
-setFile(
-e.target.files[0]
-)}
+setFile(e.target.files[0])
+}
 />
 
 <br/><br/>
 
-<button onClick={uploadImage}>
+<button onClick={upload}>
 Upload Aadhaar
 </button>
 
-<pre>{msg}</pre>
+{result &&(
+
+<div style={{
+marginTop:"40px",
+padding:"30px",
+background:"rgba(255,255,255,.1)",
+borderRadius:"20px"
+}}>
+
+<h2>Credential Stored</h2>
+
+<p>
+Name:
+{result.extracted.name}
+</p>
+
+<p>
+Age:
+{String(result.extracted.age_over_18)}
+</p>
+
+<p>
+Address:
+{String(result.extracted.address_verified)}
+</p>
 
 </div>
 
-</Layout>
+)}
+
+</div>
+
 )
+
 }
 
 
 
-/* ADMIN */
+/* ---------------- ADMIN ---------------- */
+
 function AdminPortal(){
 
-const [msg,setMsg]=useState("");
+const [approved,setApproved]=useState(false);
 
 async function approve(){
 
@@ -161,54 +211,55 @@ headers:{
 },
 body:JSON.stringify({
 user_id:"u1",
-officer_id:"gov01"
+officer_id:"gov001"
 })
 }
 );
 
 const data=await res.json();
 
-setMsg(
-JSON.stringify(
-data,
-null,
-2
-)
-);
+if(data.status==="verified"){
+setApproved(true);
+}
 
 }
 
 return(
-<Layout>
 
 <div style={{
-background:"#1e293b",
-padding:"30px",
-borderRadius:"16px"
+minHeight:"100vh",
+padding:"50px",
+background:"#14532d",
+color:"white"
 }}>
 
-<h2>Govt Admin Portal</h2>
+<h1>🏛 Government Portal</h1>
 
 <button onClick={approve}>
-Approve Document
+Approve Signature
 </button>
 
-<pre>{msg}</pre>
+{approved &&
+<h2>
+✔ Credential Approved
+</h2>
+}
 
 </div>
 
-</Layout>
 )
+
 }
 
 
 
-/* BANK */
+/* ---------------- BANK ---------------- */
+
 function BankPortal(){
 
-const [bankResult,setBankResult]=useState(null);
+const [req,setReq]=useState(null);
 
-async function requestVerification(){
+async function requestProof(){
 
 const res=await fetch(
 `${API}/request_verification`,
@@ -221,72 +272,67 @@ body:JSON.stringify({
 user_id:"u1",
 attribute:"age_over_18",
 bank:"ABC Bank",
-phone:"+911234567890"
+phone:"+919999999999"
 })
 }
 );
 
 const data=await res.json();
 
-setBankResult(data);
+setReq(data);
 
 }
 
 return(
-<Layout>
 
 <div style={{
-background:"#1e293b",
-padding:"30px",
-borderRadius:"16px"
+minHeight:"100vh",
+padding:"50px",
+background:"#312e81",
+color:"white"
 }}>
 
-<h2>Bank Portal</h2>
+<h1>🏦 Bank Portal</h1>
 
-<button onClick={requestVerification}>
-Request Verification
+<button onClick={requestProof}>
+Request Proof
 </button>
 
-{bankResult && (
-<div style={{marginTop:"20px"}}>
+{req &&(
+
+<div>
 
 <p>
 Request ID:
-<b>{bankResult.request_id}</b>
+{req.request_id}
 </p>
 
 <p>
-Approval Code:
-<b>{bankResult.approval_code}</b>
+OTP:
+{req.approval_code}
 </p>
 
-<pre>
-{JSON.stringify(
-bankResult,
-null,
-2
-)}
-</pre>
-
 </div>
+
 )}
 
 </div>
 
-</Layout>
 )
+
 }
 
 
 
-/* CONSENT */
+/* ---------------- CONSENT ---------------- */
+
 function ConsentPortal(){
 
-const [requestId,setRequestId]=useState("");
-const [code,setCode]=useState("");
-const [msg,setMsg]=useState("");
+const [id,setId]=useState("");
+const [otp,setOtp]=useState("");
+const [ok,setOk]=useState(false);
 
-async function approveConsent(){
+async function approve(){
 
 const res=await fetch(
 `${API}/approve_request`,
@@ -296,139 +342,171 @@ headers:{
 "Content-Type":"application/json"
 },
 body:JSON.stringify({
-request_id:requestId,
-code:code
+request_id:id,
+code:otp
 })
 }
 );
 
 const data=await res.json();
 
-setMsg(
-JSON.stringify(
-data,
-null,
-2
-)
-);
+if(data.approved){
+setOk(true);
+}
 
 }
 
 return(
-<Layout>
 
 <div style={{
-background:"#1e293b",
-padding:"30px",
-borderRadius:"16px"
+minHeight:"100vh",
+padding:"50px",
+background:"#fff7ed"
 }}>
 
-<h2>User Consent Portal</h2>
+<h1>🛡 Consent Portal</h1>
 
 <input
 placeholder="Request ID"
-value={requestId}
 onChange={(e)=>
-setRequestId(
-e.target.value
-)}
+setId(e.target.value)
+}
 />
 
 <br/><br/>
 
 <input
-placeholder="Approval Code"
-value={code}
+placeholder="OTP"
 onChange={(e)=>
-setCode(
-e.target.value
-)}
+setOtp(e.target.value)
+}
 />
 
-<button onClick={approveConsent}>
-Approve Consent
+<br/><br/>
+
+<button onClick={approve}>
+Approve
 </button>
 
-<pre>{msg}</pre>
+{ok &&
+<h2>
+Approved
+</h2>
+}
 
 </div>
 
-</Layout>
 )
+
 }
 
 
 
-/* VAULT */
+/* ---------------- VAULT ---------------- */
+
 function VaultPortal(){
 
-const [requestId,setRequestId]=useState("");
-const [result,setResult]=useState("");
+const [id,setId]=useState("");
+const [proof,setProof]=useState(null);
 
-async function checkVault(){
+async function fetchProof(){
 
 const res=await fetch(
-`${API}/vault_response/${requestId}`
+`${API}/vault_response/${id}`
 );
 
 const data=await res.json();
 
-setResult(
-JSON.stringify(
-data,
-null,
-2
-)
-);
+setProof(data);
 
 }
 
 return(
-<Layout>
 
 <div style={{
-background:"#1e293b",
-padding:"30px",
-borderRadius:"16px"
+minHeight:"100vh",
+padding:"50px",
+background:"#020617",
+color:"#22d3ee"
 }}>
 
-<h2>Vault Response Portal</h2>
+<h1>🔒 Vault Monitor</h1>
 
 <input
 placeholder="Request ID"
-value={requestId}
 onChange={(e)=>
-setRequestId(
-e.target.value
-)}
+setId(e.target.value)
+}
 />
 
-<button onClick={checkVault}>
-Check Result
+<button onClick={fetchProof}>
+Fetch
 </button>
 
-<pre>{result}</pre>
+{proof &&
+
+<pre>
+{JSON.stringify(
+proof,
+null,
+2
+)}
+</pre>
+
+}
 
 </div>
 
-</Layout>
 )
+
 }
 
 
+
+/* ---------------- ROUTER ---------------- */
 
 export default function App(){
 
 return(
+
+<BrowserRouter>
+
 <Routes>
 
-<Route path="/" element={<UserPortal/>}/>
-<Route path="/user" element={<UserPortal/>}/>
-<Route path="/admin" element={<AdminPortal/>}/>
-<Route path="/bank" element={<BankPortal/>}/>
-<Route path="/consent" element={<ConsentPortal/>}/>
-<Route path="/vault" element={<VaultPortal/>}/>
+<Route
+path="/"
+element={<Dashboard/>}
+/>
+
+<Route
+path="/user"
+element={<UserPortal/>}
+/>
+
+<Route
+path="/admin"
+element={<AdminPortal/>}
+/>
+
+<Route
+path="/bank"
+element={<BankPortal/>}
+/>
+
+<Route
+path="/consent"
+element={<ConsentPortal/>}
+/>
+
+<Route
+path="/vault"
+element={<VaultPortal/>}
+/>
 
 </Routes>
+
+</BrowserRouter>
+
 )
+
 }
