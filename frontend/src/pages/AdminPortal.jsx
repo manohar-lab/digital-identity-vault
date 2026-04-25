@@ -88,14 +88,14 @@ export default function AdminPortal() {
   return (
     <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }} className="animate-fade-in">
       <div style={{ marginBottom: '40px' }}>
-        <h1 style={{ background: 'linear-gradient(to right, #4ade80, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1>
           Government Administration
         </h1>
         <p>Issue W3C Verifiable Credentials and manage the Revocation Registry.</p>
       </div>
 
       <div className="grid-2">
-        <div className="glass-panel" style={{ borderTop: '4px solid #4ade80' }}>
+        <div className="glass-panel">
           <h2>Credential Issuance</h2>
           <p style={{ marginBottom: '20px' }}>Approve or reject pending validations.</p>
           
@@ -148,7 +148,7 @@ export default function AdminPortal() {
           )}
         </div>
 
-        <div className="glass-panel" style={{ borderTop: '4px solid #ef4444' }}>
+        <div className="glass-panel">
           <h2>Revocation Registry (CRL)</h2>
           <p style={{ marginBottom: '20px' }}>Revoke compromised credentials to prevent verification.</p>
           

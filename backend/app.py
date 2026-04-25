@@ -62,12 +62,28 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "http://127.0.0.1:5173"
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
+
+# ─── Exception Handling ──────────────────────────────
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"error": "INTERNAL_SERVER_ERROR", "detail": str(exc)},
+        headers={
+            "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
+            "Access-Control-Allow-Credentials": "true",
+        }
+    )
 
 
 # ─── Startup ──────────────────────────────────────────
@@ -308,7 +324,7 @@ def admin_approve(data: dict, db: Session = Depends(get_db)):
         cred = db.query(Credential).filter(
             Credential.user_id == user_id,
             Credential.status == "pending"
-        ).order_by(Credential.id.desc()).first()
+        ).order_by(Credential.created_at.desc()).first()
 
     if not cred:
         return {"error": "NO_PENDING_CREDENTIAL"}
@@ -354,7 +370,7 @@ def get_pending_credentials(db: Session = Depends(get_db)):
     """Get all pending credentials across all users for the admin dashboard."""
     creds = db.query(Credential).filter(
         Credential.status == "pending"
-    ).order_by(Credential.id.desc()).all()
+    ).order_by(Credential.created_at.desc()).all()
 
     result = []
     for c in creds:
@@ -387,9 +403,10 @@ def admin_reject(data: dict, db: Session = Depends(get_db)):
         return {"error": "NO_PENDING_CREDENTIAL"}
 
     cred.status = "rejected"
-    # we can store the reject reason in vc_json metadata or a dedicated field.
-    # We will just put it in vc_json
-    cred.vc_json["rejection_reason"] = reason
+    # Re-assign the dict to ensure SQLAlchemy detects the change for the JSON column
+    vc_data = dict(cred.vc_json)
+    vc_data["rejection_reason"] = reason
+    cred.vc_json = vc_data
     db.commit()
 
     _log(db, "CREDENTIAL_REJECTED", officer_id, cred.user_id,

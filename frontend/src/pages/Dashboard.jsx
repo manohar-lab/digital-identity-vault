@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, ShieldCheck, Fingerprint, Activity, Clock } from 'lucide-react';
+import { ShieldCheck, Fingerprint, Activity, Clock, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const API = "http://127.0.0.1:8000";
@@ -10,98 +10,114 @@ export default function Dashboard() {
     total_consents: 0,
     total_users: 0
   });
+  const [recentLogs, setRecentLogs] = useState([]);
 
   useEffect(() => {
     fetch(`${API}/metrics`)
       .then(res => res.json())
       .then(data => {
-        if(data.system) {
-          setStats(data.system);
-        }
+        if(data.system) setStats(data.system);
+      })
+      .catch(err => console.log(err));
+
+    fetch(`${API}/audit_logs`)
+      .then(res => res.json())
+      .then(data => {
+        if(data.logs) setRecentLogs(data.logs.slice(0, 6));
       })
       .catch(err => console.log(err));
   }, []);
 
   return (
-    <div style={{ padding: '60px 40px', maxWidth: '1200px', margin: '0 auto' }} className="animate-fade-in">
+    <div style={{ padding: '60px 40px', maxWidth: '1100px', margin: '0 auto' }} className="animate-fade-in">
       
-      <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-        <h1 style={{ fontSize: '64px', marginBottom: '24px' }}>
-          The Future of <span className="text-gradient">Digital Identity</span>
+      {/* Hero */}
+      <div style={{ marginBottom: '80px', paddingTop: '40px' }}>
+        <p style={{ color: '#a855f7', fontSize: '13px', fontWeight: '600', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px' }}>
+          Privacy-First Identity Network
+        </p>
+        <h1 style={{ fontSize: '56px', lineHeight: '1.1', marginBottom: '20px', maxWidth: '700px' }}>
+          Prove who you are. <br/>
+          <span className="text-gradient">Share nothing else.</span>
         </h1>
-        <p style={{ fontSize: '20px', maxWidth: '700px', margin: '0 auto', opacity: 0.8 }}>
-          A privacy-preserving, zero-knowledge credential network. 
-          Share proofs, not your raw data. Protected against replay attacks and unauthorized access.
+        <p style={{ fontSize: '17px', maxWidth: '550px', color: '#71717a', lineHeight: '1.7' }}>
+          Zero-knowledge credential verification powered by W3C standards, Ed25519 signatures, and HMAC-commitment proofs.
         </p>
       </div>
 
-      <div className="grid-3">
-        <div className="glass-panel" style={{ textAlign: 'center' }}>
-          <ShieldCheck size={48} color="#4ade80" style={{ marginBottom: '20px' }}/>
-          <h2>{stats.active_credentials}</h2>
-          <p>Active Credentials</p>
-        </div>
-
-        <div className="glass-panel" style={{ textAlign: 'center' }}>
-          <Fingerprint size={48} color="#38bdf8" style={{ marginBottom: '20px' }}/>
-          <h2>{stats.total_users}</h2>
-          <p>Registered Identities</p>
-        </div>
-
-        <div className="glass-panel" style={{ textAlign: 'center' }}>
-          <Activity size={48} color="#f59e0b" style={{ marginBottom: '20px' }}/>
-          <h2>{stats.total_consents}</h2>
-          <p>Verified Consents</p>
-        </div>
+      {/* Stats */}
+      <div className="grid-3" style={{ marginBottom: '64px' }}>
+        {[
+          { label: 'Active Credentials', value: stats.active_credentials, icon: ShieldCheck, color: '#22c55e' },
+          { label: 'Registered DIDs', value: stats.total_users, icon: Fingerprint, color: '#a855f7' },
+          { label: 'Verified Consents', value: stats.total_consents, icon: Activity, color: '#eab308' },
+        ].map(({ label, value, icon: Icon, color }) => (
+          <div key={label} className="glass-panel" style={{ padding: '28px' }}>
+            <div className="flex-between" style={{ marginBottom: '24px' }}>
+              <Icon size={20} color={color} />
+              <span style={{ fontSize: '11px', color: '#52525b', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
+            </div>
+            <h2 style={{ fontSize: '36px', fontWeight: '700', marginBottom: '0' }}>{value}</h2>
+          </div>
+        ))}
       </div>
 
-      <div style={{ marginTop: '60px' }}>
-        <h2 style={{ marginBottom: '30px' }}>Explore the Network</h2>
+      {/* Two-column: Activity + Quick Links */}
+      <div className="grid-2" style={{ gap: '32px' }}>
         
-        <div className="grid-2">
-          <Link to="/wallet" style={{ textDecoration: 'none' }}>
-            <div className="glass-panel">
-              <h3 style={{ fontSize: '20px', color: 'white', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <UserCircle color="#818cf8"/> User Wallet
-              </h3>
-              <p>Upload your Aadhaar, view your credentials, and manage consent requests.</p>
-            </div>
-          </Link>
+        {/* Activity */}
+        <div>
+          <div className="flex-between" style={{ marginBottom: '20px' }}>
+            <h2 style={{ marginBottom: '0', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clock size={16} color="#71717a" /> Recent Activity
+            </h2>
+            <Link to="/vault" style={{ color: '#71717a', fontSize: '13px', textDecoration: 'none' }}>
+              View all →
+            </Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'rgba(255,255,255,0.04)', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+            {recentLogs.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#52525b', fontSize: '14px' }}>
+                No activity yet.
+              </div>
+            ) : recentLogs.map((log, i) => (
+              <div key={i} style={{ padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0a0a0a' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: log.event.includes('THREAT') ? '#ef4444' : log.event.includes('APPROVE') ? '#22c55e' : '#3f3f46', flexShrink: 0 }} />
+                  <span style={{ fontSize: '13px', color: '#d4d4d8' }}>{log.event.replace(/_/g, ' ')}</span>
+                </div>
+                <span style={{ fontSize: '11px', color: '#52525b', flexShrink: 0 }}>{new Date(log.timestamp).toLocaleTimeString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-          <Link to="/admin" style={{ textDecoration: 'none' }}>
-            <div className="glass-panel">
-              <h3 style={{ fontSize: '20px', color: 'white', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Building2 color="#f87171"/> Gov Admin
-              </h3>
-              <p>Approve credentials and manage the revocation registry.</p>
-            </div>
-          </Link>
-
-          <Link to="/bank" style={{ textDecoration: 'none' }}>
-            <div className="glass-panel">
-              <h3 style={{ fontSize: '20px', color: 'white', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <BuildingLibrary color="#fbbf24"/> Relying Party (Bank)
-              </h3>
-              <p>Request selective disclosure proofs and verify signatures.</p>
-            </div>
-          </Link>
-
-          <Link to="/research" style={{ textDecoration: 'none' }}>
-            <div className="glass-panel">
-              <h3 style={{ fontSize: '20px', color: 'white', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <BookOpen color="#34d399"/> Architecture & Research
-              </h3>
-              <p>View ZK concepts, sequence diagrams, and threat models.</p>
-            </div>
-          </Link>
+        {/* Quick Links */}
+        <div>
+          <h2 style={{ marginBottom: '20px', fontSize: '16px' }}>Quick Access</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {[
+              { to: '/wallet', label: 'Identity Wallet', desc: 'Upload documents, manage credentials', color: '#a855f7' },
+              { to: '/bank', label: 'Relying Party', desc: 'Request & verify ZK proofs', color: '#ec4899' },
+              { to: '/admin', label: 'Gov Administration', desc: 'Issue credentials, manage CRL', color: '#22c55e' },
+              { to: '/research', label: 'Architecture', desc: 'Threat models & performance data', color: '#eab308' },
+            ].map(({ to, label, desc, color }) => (
+              <Link key={to} to={to} style={{ textDecoration: 'none' }}>
+                <div className="glass-panel" style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: color }} />
+                    <div>
+                      <p style={{ fontSize: '14px', color: '#fff', fontWeight: '500', marginBottom: '2px' }}>{label}</p>
+                      <p style={{ fontSize: '12px', color: '#52525b', margin: 0 }}>{desc}</p>
+                    </div>
+                  </div>
+                  <ArrowUpRight size={16} color="#3f3f46" />
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-// Temporary icon fallbacks for dashboard
-const UserCircle = ({color}) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-const Building2 = ({color}) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
-const BuildingLibrary = ({color}) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M3 7v1a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V7"/><path d="m3 7 9-4 9 4"/><path d="M8 11v10"/><path d="M16 11v10"/></svg>
-const BookOpen = ({color}) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>

@@ -26,14 +26,14 @@ export default function VaultMonitor() {
     <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }} className="animate-fade-in">
       <div className="flex-between" style={{ marginBottom: '40px' }}>
         <div>
-          <h1 style={{ background: 'linear-gradient(to right, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <h1>
             System Audit Monitor
           </h1>
           <p>Immutable ledger of all cryptographic operations and threat mitigations.</p>
         </div>
-        <div style={{ background: 'rgba(56,189,248,0.1)', padding: '12px 24px', borderRadius: '12px', border: '1px solid rgba(56,189,248,0.3)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Activity color="#38bdf8" />
-          <strong style={{ color: '#38bdf8' }}>Live Network</strong>
+        <div style={{ background: 'rgba(168, 85, 247, 0.08)', padding: '10px 18px', borderRadius: '10px', border: '1px solid rgba(168, 85, 247, 0.15)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#a855f7', animation: 'pulse-glow 2s infinite' }} />
+          <span style={{ color: '#a855f7', fontSize: '13px', fontWeight: '600' }}>Live</span>
         </div>
       </div>
 

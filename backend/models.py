@@ -42,6 +42,7 @@ class Credential(Base):
     issuer_did = Column(String, nullable=True)
     issued_at = Column(DateTime, nullable=True)
     revoked_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="credentials")
 
