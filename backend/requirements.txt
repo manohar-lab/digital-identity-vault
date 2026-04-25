@@ -1,0 +1,10 @@
+fastapi>=0.100.0
+uvicorn>=0.23.0
+sqlalchemy>=2.0.0
+cryptography>=41.0.0
+twilio>=8.0.0
+pytesseract>=0.3.10
+Pillow>=10.0.0
+pyzbar>=0.1.9
+slowapi>=0.1.8
+python-multipart>=0.0.6

@@ -1,0 +1,30 @@
+# Environments
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# Node
+node_modules/
+dist/
+build/
+npm-debug.log*
+
+# Database & Uploads
+backend/vault.db
+backend/uploads/
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Demo artifacts
+dummy_aadhaar.png
